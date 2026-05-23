@@ -1,4 +1,4 @@
-# SVO Turbo: SEO Auditor Interface
+# SVO Turbo: Search Visibility Optimization
 
 ## 1. Project Overview
 This repository contains the public-facing marketing and auditing interface for the SVO Turbo framework. Operating as the primary entry point for client acquisition and initial visibility assessment, this application connects directly to the broader Digital Authority Platform (DAP) architecture.
