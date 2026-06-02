@@ -1,12 +1,9 @@
 {
-  "version": 2,
   "functions": {
     "api/audit.py": {
-      "runtime": "python3.12",
       "maxDuration": 60
     },
     "api/capture.py": {
-      "runtime": "python3.12",
       "maxDuration": 10
     }
   },
