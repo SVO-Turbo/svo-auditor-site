@@ -1,12 +1,4 @@
 {
-  "functions": {
-    "api/audit.py": {
-      "maxDuration": 60
-    },
-    "api/capture.py": {
-      "maxDuration": 10
-    }
-  },
   "headers": [
     {
       "source": "/api/(.*)",
