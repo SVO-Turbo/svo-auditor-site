@@ -1,633 +1,1180 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SVO Auditor — Professional Search Visibility Analysis Tool</title>
-    <meta name="description" content="Free professional SEO/SVO analysis with weighted scoring, AI readiness checks, and actionable fix guidance. Scan any website in seconds.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SVO Audit — Search Visibility Optimization</title>
+<meta name="description" content="32-check search visibility audit. Real fix directives. AI-readiness verified.">
+<meta name="robots" content="noindex">
 
-        :root {
-            --bg-primary: #0a0a1a;
-            --bg-secondary: #12122a;
-            --bg-card: rgba(255,255,255,0.04);
-            --border-subtle: rgba(255,255,255,0.06);
-            --text-primary: #f0f0f8;
-            --text-secondary: rgba(240,240,248,0.6);
-            --text-muted: rgba(240,240,248,0.35);
-            --accent-1: #6366f1;
-            --accent-2: #8b5cf6;
-            --accent-3: #a78bfa;
-            --accent-glow: rgba(99,102,241,0.25);
-            --green: #34d399;
-            --amber: #fbbf24;
-            --red: #f87171;
-        }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
 
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            overflow-x: hidden;
-            line-height: 1.6;
-        }
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 
-        /* ===== AMBIENT BACKGROUND ===== */
-        .bg-glow {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            pointer-events: none;
-            overflow: hidden;
-        }
-        .bg-glow::before {
-            content: '';
-            position: absolute;
-            width: 800px; height: 800px;
-            top: -200px; left: -200px;
-            background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%);
-            animation: float1 20s ease-in-out infinite;
-        }
-        .bg-glow::after {
-            content: '';
-            position: absolute;
-            width: 600px; height: 600px;
-            bottom: -100px; right: -100px;
-            background: radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%);
-            animation: float2 25s ease-in-out infinite;
-        }
-        @keyframes float1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(80px,60px)} }
-        @keyframes float2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-60px,-40px)} }
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        /* ===== GRID OVERLAY ===== */
-        .grid-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            pointer-events: none;
-            background-image:
-                linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
-            background-size: 60px 60px;
-        }
+  :root {
+    --bg:       #0a0a0a;
+    --bg-card:  #131313;
+    --bg-input: #1a1a1a;
+    --border:   #262626;
+    --border-h: #3a3a3a;
+    --fg:       #fafafa;
+    --fg-dim:   #a3a3a3;
+    --fg-mute:  #525252;
+    --pass:     #4ade80;
+    --fail:     #f87171;
+    --warn:     #fbbf24;
+    --accent:   #fafafa;
+  }
 
-        /* ===== LAYOUT ===== */
-        .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'JetBrains Mono', ui-monospace, 'Cascadia Code', Menlo, monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    font-variant-numeric: tabular-nums;
+  }
 
-        /* ===== NAV ===== */
-        nav {
-            padding: 20px 0;
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            z-index: 100;
-            backdrop-filter: blur(20px);
-            background: rgba(10,10,26,0.8);
-            border-bottom: 1px solid var(--border-subtle);
-        }
-        .nav-inner { display: flex; align-items: center; justify-content: space-between; max-width: 1100px; margin: 0 auto; padding: 0 24px; }
-        .nav-brand { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
-        .nav-brand span { background: linear-gradient(135deg, var(--accent-1), var(--accent-3)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
-        .nav-links { display: flex; gap: 32px; align-items: center; }
-        .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
-        .nav-links a:hover { color: var(--text-primary); }
-        .nav-cta {
-            padding: 10px 22px;
-            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
-            border-radius: 10px;
-            color: #fff !important;
-            font-weight: 600 !important;
-            font-size: 13px !important;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 8px 25px var(--accent-glow); }
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+  }
+  .brand {
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: -0.02em;
+  }
+  .brand span { color: var(--fg-mute); }
+  .version {
+    font-size: 11px;
+    color: var(--fg-mute);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 3px;
+  }
 
-        /* ===== HERO ===== */
-        .hero {
-            padding: 160px 0 100px;
-            text-align: center;
-        }
-        .hero-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 16px 6px 8px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: 100px;
-            font-size: 13px;
-            color: var(--text-secondary);
-            margin-bottom: 28px;
-            animation: fadeUp 0.6s ease-out;
-        }
-        .hero-badge .dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 2s infinite; }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-        .hero h1 {
-            font-size: clamp(42px, 6vw, 72px);
-            font-weight: 900;
-            letter-spacing: -2px;
-            line-height: 1.05;
-            margin-bottom: 20px;
-            animation: fadeUp 0.6s ease-out 0.1s both;
-        }
-        .hero h1 .gradient {
-            background: linear-gradient(135deg, var(--accent-1), var(--accent-2), var(--accent-3), #c084fc);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            color: transparent;
-            background-size: 200% 200%;
-            animation: shimmer 4s ease-in-out infinite;
-        }
-        @keyframes shimmer { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
-        .hero p {
-            font-size: 18px;
-            color: var(--text-secondary);
-            max-width: 560px;
-            margin: 0 auto 40px;
-            animation: fadeUp 0.6s ease-out 0.2s both;
-        }
-        @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 48px 24px 96px;
+  }
 
-        .hero-actions {
-            display: flex;
-            gap: 16px;
-            justify-content: center;
-            flex-wrap: wrap;
-            animation: fadeUp 0.6s ease-out 0.3s both;
-        }
-        .btn {
-            padding: 16px 32px;
-            border-radius: 14px;
-            font-weight: 700;
-            font-size: 15px;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            transition: all 0.25s ease;
-            cursor: pointer;
-            border: none;
-            font-family: 'Inter', sans-serif;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
-            color: #fff;
-            box-shadow: 0 4px 20px var(--accent-glow);
-        }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 35px rgba(99,102,241,0.4); }
-        .btn-secondary {
-            background: var(--bg-card);
-            color: var(--text-primary);
-            border: 1px solid var(--border-subtle);
-        }
-        .btn-secondary:hover { background: rgba(255,255,255,0.08); transform: translateY(-2px); }
+  .state { animation: fadeIn 0.3s ease-out; }
+  .hidden { display: none !important; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* ===== DEMO PREVIEW ===== */
-        .demo-preview {
-            margin: 80px auto 0;
-            max-width: 800px;
-            border-radius: 16px;
-            border: 1px solid var(--border-subtle);
-            background: var(--bg-secondary);
-            overflow: hidden;
-            box-shadow: 0 20px 80px rgba(0,0,0,0.4), 0 0 60px var(--accent-glow);
-            animation: fadeUp 0.8s ease-out 0.4s both;
-        }
-        .demo-bar {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 14px 18px;
-            background: rgba(255,255,255,0.03);
-            border-bottom: 1px solid var(--border-subtle);
-        }
-        .demo-dot { width: 12px; height: 12px; border-radius: 50%; }
-        .demo-dot:nth-child(1) { background: #f87171; }
-        .demo-dot:nth-child(2) { background: #fbbf24; }
-        .demo-dot:nth-child(3) { background: #34d399; }
-        .demo-content { padding: 32px; }
-        .demo-score {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-            margin-bottom: 28px;
-        }
-        .score-circle {
-            width: 90px; height: 90px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            font-weight: 900;
-            border: 4px solid rgba(52,211,153,0.4);
-            background: rgba(52,211,153,0.08);
-            color: var(--green);
-            flex-shrink: 0;
-        }
-        .score-info h3 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
-        .score-info p { font-size: 13px; color: var(--text-secondary); }
-        .demo-checks { display: flex; flex-direction: column; gap: 8px; }
-        .demo-check {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 14px;
-            background: var(--bg-card);
-            border-radius: 8px;
-            border: 1px solid var(--border-subtle);
-            font-size: 13px;
-        }
-        .demo-check .name { font-weight: 600; }
-        .badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
-        .badge-pass { background: rgba(52,211,153,0.15); color: var(--green); }
-        .badge-fail { background: rgba(248,113,113,0.15); color: var(--red); }
+  #state-initial h1 {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+  #state-initial .sub {
+    color: var(--fg-dim);
+    margin-bottom: 32px;
+    font-size: 13px;
+  }
+  .stats-row {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 40px;
+    padding: 16px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .stat .num {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--fg);
+  }
+  .stat .lbl {
+    font-size: 11px;
+    color: var(--fg-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
 
-        /* ===== FEATURES ===== */
-        .features { padding: 120px 0; }
-        .section-label {
-            text-align: center;
-            font-size: 13px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--accent-3);
-            margin-bottom: 12px;
-        }
-        .section-title {
-            text-align: center;
-            font-size: clamp(28px, 4vw, 40px);
-            font-weight: 800;
-            letter-spacing: -1px;
-            margin-bottom: 56px;
-        }
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-        }
-        .feature-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: 16px;
-            padding: 28px;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        .feature-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, var(--accent-1), transparent);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        .feature-card:hover { border-color: rgba(99,102,241,0.3); transform: translateY(-4px); }
-        .feature-card:hover::before { opacity: 1; }
-        .feature-icon {
-            width: 44px; height: 44px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            margin-bottom: 16px;
-            background: rgba(99,102,241,0.1);
-            border: 1px solid rgba(99,102,241,0.2);
-        }
-        .feature-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
-        .feature-card p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+  #audit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  input[type="url"], input[type="email"] {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    padding: 16px 18px;
+    font-family: inherit;
+    font-size: 14px;
+    width: 100%;
+    border-radius: 4px;
+    transition: border-color 0.15s;
+  }
+  input[type="url"]:focus, input[type="email"]:focus {
+    outline: none;
+    border-color: var(--fg);
+  }
+  input[type="url"]::placeholder, input[type="email"]::placeholder {
+    color: var(--fg-mute);
+  }
+  button.primary {
+    background: var(--fg);
+    color: var(--bg);
+    border: none;
+    padding: 16px 24px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  button.primary:hover { background: #e5e5e5; }
+  button.primary:active { transform: scale(0.98); }
+  button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* ===== CHECKS SECTION ===== */
-        .checks { padding: 60px 0 120px; }
-        .checks-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-top: 48px;
-        }
-        .check-group {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: 16px;
-            padding: 28px;
-        }
-        .check-group h3 {
-            font-size: 14px;
-            font-weight: 700;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .check-group h3 .icon { font-size: 18px; }
-        .check-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 0;
-            font-size: 13px;
-            color: var(--text-secondary);
-            border-bottom: 1px solid var(--border-subtle);
-        }
-        .check-item:last-child { border-bottom: none; }
-        .check-item .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-3); flex-shrink: 0; }
+  button.secondary {
+    background: transparent;
+    color: var(--fg);
+    border: 1px solid var(--border-h);
+    padding: 14px 22px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: border-color 0.15s;
+  }
+  button.secondary:hover { border-color: var(--fg); }
 
-        /* ===== HOW IT WORKS ===== */
-        .how-it-works { padding: 60px 0 120px; }
-        .steps {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
-            margin-top: 48px;
-        }
-        .step {
-            text-align: center;
-            padding: 32px 24px;
-            position: relative;
-        }
-        .step-num {
-            width: 48px; height: 48px;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
-            color: #fff;
-            margin-bottom: 20px;
-        }
-        .step h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
-        .step p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+  .error-msg {
+    color: var(--fail);
+    font-size: 13px;
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: rgba(248,113,113,0.08);
+    border: 1px solid rgba(248,113,113,0.25);
+    border-radius: 4px;
+    display: none;
+  }
+  .error-msg.show { display: block; }
 
-        /* ===== CTA ===== */
-        .cta-section {
-            padding: 80px 0 120px;
-            text-align: center;
-        }
-        .cta-box {
-            background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.08));
-            border: 1px solid rgba(99,102,241,0.2);
-            border-radius: 24px;
-            padding: 60px 40px;
-            position: relative;
-            overflow: hidden;
-        }
-        .cta-box::before {
-            content: '';
-            position: absolute;
-            top: -2px; left: -2px; right: -2px; bottom: -2px;
-            background: linear-gradient(135deg, var(--accent-1), var(--accent-2), var(--accent-3));
-            border-radius: 25px;
-            z-index: -1;
-            opacity: 0.15;
-        }
-        .cta-box h2 { font-size: 32px; font-weight: 800; letter-spacing: -1px; margin-bottom: 12px; }
-        .cta-box p { color: var(--text-secondary); margin-bottom: 32px; font-size: 16px; }
+  #state-loading {
+    text-align: center;
+    padding: 80px 0;
+  }
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 2px solid var(--border);
+    border-top-color: var(--fg);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 24px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loading-message {
+    color: var(--fg-dim);
+    font-size: 13px;
+    letter-spacing: 0.02em;
+  }
+  #loading-step {
+    color: var(--fg-mute);
+    font-size: 11px;
+    margin-top: 8px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
 
-        /* ===== FOOTER ===== */
-        footer {
-            padding: 40px 0;
-            border-top: 1px solid var(--border-subtle);
-            text-align: center;
-        }
-        footer p { font-size: 13px; color: var(--text-muted); }
-        footer a { color: var(--accent-3); text-decoration: none; }
-        footer a:hover { text-decoration: underline; }
+  .score-banner {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 24px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 24px;
+  }
+  .score-number {
+    font-size: 64px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: var(--fg);
+  }
+  .score-number.score-low { color: var(--fail); }
+  .score-number.score-mid { color: var(--warn); }
+  .score-number.score-high { color: var(--pass); }
+  .score-meta { flex: 1; }
+  .score-domain {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    word-break: break-all;
+  }
+  .score-label {
+    font-size: 11px;
+    color: var(--fg-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .score-cap {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: rgba(248,113,113,0.08);
+    border-left: 3px solid var(--fail);
+    border-radius: 0 4px 4px 0;
+    font-size: 12px;
+    color: var(--fg);
+  }
 
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 768px) {
-            .features-grid, .checks-grid, .steps { grid-template-columns: 1fr; }
-            .nav-links { display: none; }
-            .hero { padding: 130px 0 60px; }
-            .demo-score { flex-direction: column; text-align: center; }
-        }
-    </style>
+  .categories {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+  }
+  .cat-row {
+    display: grid;
+    grid-template-columns: 1fr 60px 80px;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+  }
+  .cat-row + .cat-row { border-top: 1px solid var(--border); }
+  .cat-label { font-size: 13px; }
+  .cat-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .cat-bar-fill {
+    height: 100%;
+    background: var(--fg);
+    border-radius: 3px;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .cat-bar-fill.low { background: var(--fail); }
+  .cat-bar-fill.mid { background: var(--warn); }
+  .cat-bar-fill.high { background: var(--pass); }
+  .cat-score {
+    font-size: 12px;
+    color: var(--fg-dim);
+    text-align: right;
+    font-weight: 500;
+  }
+
+  .fix-queue {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 24px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .fix-queue-title {
+    font-size: 11px;
+    color: var(--fg-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+  }
+  .fix-queue-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .fix-queue-item:last-child { border-bottom: none; }
+  .fix-queue-item .points {
+    color: var(--pass);
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .fix-queue-item .name {
+    font-size: 13px;
+    color: var(--fg);
+  }
+  .fix-queue-unlock {
+    margin-top: 20px;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(74,222,128,0.04), rgba(74,222,128,0.01));
+    border: 1px solid rgba(74,222,128,0.2);
+    border-radius: 4px;
+    text-align: center;
+  }
+  .fix-queue-unlock-text {
+    font-size: 13px;
+    color: var(--fg-dim);
+    margin-bottom: 14px;
+  }
+  .fix-queue-unlock-text strong { color: var(--fg); }
+  .lock-icon { font-size: 16px; margin-right: 6px; }
+
+  .section-title {
+    font-size: 11px;
+    color: var(--fg-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin: 32px 0 12px;
+    padding: 0 4px;
+  }
+  .checks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .check {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px 20px;
+    transition: border-color 0.15s;
+  }
+  .check:hover { border-color: var(--border-h); }
+  .check-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .check-name {
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .check-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 3px;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+  .badge-pass { background: rgba(74,222,128,0.12); color: var(--pass); }
+  .badge-fail { background: rgba(248,113,113,0.12); color: var(--fail); }
+  .badge-warn { background: rgba(251,191,36,0.12); color: var(--warn); }
+  .check-detail {
+    font-size: 12px;
+    color: var(--fg-dim);
+    line-height: 1.6;
+    margin-bottom: 10px;
+  }
+  .check-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 11px;
+    color: var(--fg-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .check-meta .points-bad { color: var(--fail); }
+  .check-meta .points-good { color: var(--pass); }
+
+  .check-fix {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--border);
+    animation: revealFix 0.5s ease-out;
+  }
+  @keyframes revealFix {
+    from { opacity: 0; max-height: 0; }
+    to { opacity: 1; max-height: 800px; }
+  }
+  .fix-section { margin-bottom: 14px; }
+  .fix-section:last-child { margin-bottom: 0; }
+  .fix-label {
+    font-size: 10px;
+    color: var(--fg-mute);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+    font-weight: 700;
+  }
+  .fix-content {
+    font-size: 12px;
+    line-height: 1.6;
+    background: var(--bg);
+    padding: 12px 14px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--fg);
+  }
+  .verify-content {
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--fg-dim);
+    padding: 8px 0;
+  }
+
+  .actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 32px;
+    flex-wrap: wrap;
+  }
+  .actions button { flex: 1; min-width: 140px; }
+
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 24px;
+  }
+  .modal {
+    background: var(--bg-card);
+    border: 1px solid var(--border-h);
+    border-radius: 6px;
+    padding: 32px;
+    max-width: 440px;
+    width: 100%;
+    position: relative;
+  }
+  .modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: var(--fg-mute);
+    font-size: 24px;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    line-height: 1;
+  }
+  .modal-close:hover { color: var(--fg); background: var(--border); }
+  .modal h2 {
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .modal-sub {
+    color: var(--fg-dim);
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+  .modal-fine {
+    color: var(--fg-mute);
+    font-size: 11px;
+    margin-top: 16px;
+    line-height: 1.5;
+  }
+  .modal-points {
+    display: inline-block;
+    background: rgba(74,222,128,0.1);
+    color: var(--pass);
+    border: 1px solid rgba(74,222,128,0.25);
+    padding: 4px 10px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    letter-spacing: 0.05em;
+  }
+
+  footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--fg-mute);
+    font-size: 11px;
+    border-top: 1px solid var(--border);
+  }
+  footer a { color: var(--fg-dim); text-decoration: none; }
+  footer a:hover { color: var(--fg); }
+
+  @media (max-width: 600px) {
+    main { padding: 32px 16px 64px; }
+    #state-initial h1 { font-size: 26px; }
+    .score-number { font-size: 48px; }
+    .score-banner { flex-direction: column; align-items: flex-start; }
+    .cat-row { grid-template-columns: 1fr 50px 60px; gap: 8px; }
+    .actions button { min-width: 100%; }
+  }
+</style>
 </head>
 <body>
-    <div class="bg-glow"></div>
-    <div class="grid-overlay"></div>
 
-    <!-- NAV -->
-    <nav>
-        <div class="nav-inner">
-            <div class="nav-brand"><span>SVO Auditor</span></div>
-            <div class="nav-links">
-                <a href="#features">Features</a>
-                <a href="#checks">What We Check</a>
-                <a href="#how">How It Works</a>
-                <a href="#get-started" class="nav-cta">Get Started</a>
-            </div>
-        </div>
-    </nav>
+<header>
+  <div class="brand">SVO<span>.</span>AUDIT</div>
+  <span class="version">v2.0</span>
+</header>
 
-    <!-- HERO -->
-    <section class="hero">
-        <div class="container">
-            <div class="hero-badge">
-                <span class="dot"></span>
-                Professional SVO Analysis &#8212; No API Keys Required
-            </div>
-            <h1>
-                Know Your Site's<br>
-                <span class="gradient">SVO Score</span> Instantly
-            </h1>
-            <p>Professional-grade SVO analysis with weighted scoring, AI readiness checks, and step-by-step fix guidance. Run it locally, no billing, no limits.</p>
-            <div class="hero-actions">
-                <a href="#get-started" class="btn btn-primary">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    Get Access
-                </a>
-                <a href="#features" class="btn btn-secondary">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
-                    See How It Works
-                </a>
-            </div>
-        </div>
-    </section>
+<main>
 
-    <!-- DEMO PREVIEW -->
-    <div class="container">
-        <div class="demo-preview">
-            <div class="demo-bar">
-                <span class="demo-dot"></span>
-                <span class="demo-dot"></span>
-                <span class="demo-dot"></span>
-            </div>
-            <div class="demo-content">
-                <div class="demo-score">
-                    <div class="score-circle">82</div>
-                    <div class="score-info">
-                        <h3>example-landscaping.com</h3>
-                        <p>Good SVO health with clear areas for improvement.</p>
-                    </div>
-                </div>
-                <div class="demo-checks">
-                    <div class="demo-check"><span class="name">Page Title</span><span class="badge badge-pass">PASS</span></div>
-                    <div class="demo-check"><span class="name">Meta Description</span><span class="badge badge-pass">PASS</span></div>
-                    <div class="demo-check"><span class="name">Structured Data</span><span class="badge badge-fail">FAIL</span></div>
-                    <div class="demo-check"><span class="name">AI Crawler Access</span><span class="badge badge-pass">PASS</span></div>
-                    <div class="demo-check"><span class="name">IndexNow Protocol</span><span class="badge badge-fail">FAIL</span></div>
-                </div>
-            </div>
-        </div>
+  <section id="state-initial" class="state">
+    <h1>Search Visibility Audit</h1>
+    <p class="sub">32 weighted checks across technical SEO, structured data, and AI crawler readiness.</p>
+
+    <div class="stats-row">
+      <div class="stat">
+        <div class="num">32</div>
+        <div class="lbl">Checks</div>
+      </div>
+      <div class="stat">
+        <div class="num">100</div>
+        <div class="lbl">Max Score</div>
+      </div>
+      <div class="stat">
+        <div class="num">6</div>
+        <div class="lbl">AI Bots</div>
+      </div>
+      <div class="stat">
+        <div class="num">~8s</div>
+        <div class="lbl">Per Audit</div>
+      </div>
     </div>
 
-    <!-- FEATURES -->
-    <section class="features" id="features">
-        <div class="container">
-            <div class="section-label">Features</div>
-            <h2 class="section-title">Everything you need to audit SVO</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">&#x1F4CA;</div>
-                    <h3>Weighted Scoring</h3>
-                    <p>Every check is weighted by real-world SVO impact. An SSL issue costs more than a missing lang attribute &#8212; our scoring reflects that.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">&#x1F916;</div>
-                    <h3>AI Readiness Checks</h3>
-                    <p>Is your site visible to ChatGPT, Claude, and Perplexity? We check robots.txt, crawler rules, and IndexNow compliance.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">&#x1F6E0;&#xFE0F;</div>
-                    <h3>Fix Guidance</h3>
-                    <p>Every failed check includes step-by-step instructions with code examples. Know exactly what to change and why.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">&#x1F4C4;</div>
-                    <h3>Two Report System</h3>
-                    <p>Summary report for executives, detail report for developers. Both beautifully formatted and ready to share.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">&#x1F3C6;</div>
-                    <h3>Path to 100</h3>
-                    <p>A prioritized roadmap showing which fixes gain the most points. Fix in order for maximum score improvement.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">&#x1F512;</div>
-                    <h3>100% Private</h3>
-                    <p>Runs entirely on your machine. No data sent to third parties, no accounts required, no usage limits whatsoever.</p>
-                </div>
-            </div>
+    <form id="audit-form">
+      <input type="url" id="url-input" placeholder="https://yourdomain.com" required autocomplete="off" spellcheck="false">
+      <button type="submit" class="primary">RUN AUDIT</button>
+    </form>
+    <div class="error-msg" id="error-initial"></div>
+  </section>
+
+  <section id="state-loading" class="state hidden">
+    <div class="spinner"></div>
+    <div id="loading-message">Initializing audit</div>
+    <div id="loading-step">Step 1 of 6</div>
+  </section>
+
+  <section id="state-results" class="state hidden">
+    <div class="score-banner">
+      <div class="score-number" id="score-number">--</div>
+      <div class="score-meta">
+        <div class="score-domain" id="score-domain">--</div>
+        <div class="score-label">SVO Score / 100</div>
+      </div>
+    </div>
+    <div id="score-cap-msg"></div>
+
+    <div class="categories" id="categories"></div>
+
+    <div id="fix-queue-container"></div>
+
+    <div class="section-title">All Check Results</div>
+    <div class="checks-list" id="checks-list"></div>
+
+    <div class="actions" id="post-unlock-actions" style="display: none;">
+      <button class="primary" id="export-pdf-btn">EXPORT PDF</button>
+      <button class="secondary" id="new-audit-btn">NEW AUDIT</button>
+    </div>
+  </section>
+
+</main>
+
+<div class="modal-backdrop hidden" id="modal-backdrop">
+  <div class="modal" role="dialog" aria-labelledby="modal-title">
+    <button class="modal-close" id="modal-close" aria-label="Close">×</button>
+    <div class="modal-points" id="modal-points">UNLOCK +0 RECOVERABLE POINTS</div>
+    <h2 id="modal-title">Unlock fix directives</h2>
+    <p class="modal-sub">Enter your email to view exact fix instructions, code snippets, and the downloadable PDF report.</p>
+    <form id="email-form">
+      <input type="email" id="email-input" placeholder="you@company.com" required autocomplete="email">
+      <button type="submit" class="primary" style="width:100%; margin-top:12px;">UNLOCK FIXES</button>
+    </form>
+    <div class="error-msg" id="error-email"></div>
+    <p class="modal-fine">We use your email to deliver the PDF and send up to 3 follow-ups with score improvement tips. No spam. Unsubscribe anytime.</p>
+  </div>
+</div>
+
+<footer>
+  SVO Audit — Search Visibility Optimization Tool
+</footer>
+
+<script>
+const State = {
+  current: 'initial',
+  data: null,
+  reportId: null,
+  unlocked: false,
+  fullChecks: null,
+};
+
+const CATEGORY_LABELS = {
+  'technical': 'Technical Foundation',
+  'on-page': 'On-Page SEO',
+  'structured-data': 'Structured Data',
+  'ai-readiness': 'AI Readiness',
+};
+
+const LOADING_MESSAGES = [
+  { msg: 'Validating URL and resolving DNS', step: '1 of 6' },
+  { msg: 'Fetching HTML and parsing structure', step: '2 of 6' },
+  { msg: 'Running technical checks', step: '3 of 6' },
+  { msg: 'Analyzing structured data', step: '4 of 6' },
+  { msg: 'Checking AI crawler access', step: '5 of 6' },
+  { msg: 'Calculating scores and generating report', step: '6 of 6' },
+];
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function setState(name) {
+  document.querySelectorAll('.state').forEach(s => s.classList.add('hidden'));
+  document.getElementById(`state-${name}`).classList.remove('hidden');
+  State.current = name;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showError(elemId, message) {
+  const el = document.getElementById(elemId);
+  el.textContent = message;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 8000);
+}
+
+function clearError(elemId) {
+  document.getElementById(elemId).classList.remove('show');
+}
+
+function scoreColorClass(pct) {
+  if (pct >= 80) return 'score-high';
+  if (pct >= 50) return 'score-mid';
+  return 'score-low';
+}
+
+function barColorClass(pct) {
+  if (pct >= 80) return 'high';
+  if (pct >= 50) return 'mid';
+  return 'low';
+}
+
+let loadingTimer = null;
+function startLoadingMessages() {
+  const msgEl = document.getElementById('loading-message');
+  const stepEl = document.getElementById('loading-step');
+  let i = 0;
+  msgEl.textContent = LOADING_MESSAGES[0].msg;
+  stepEl.textContent = LOADING_MESSAGES[0].step;
+  loadingTimer = setInterval(() => {
+    i = (i + 1) % LOADING_MESSAGES.length;
+    msgEl.textContent = LOADING_MESSAGES[i].msg;
+    stepEl.textContent = LOADING_MESSAGES[i].step;
+  }, 1400);
+}
+function stopLoadingMessages() {
+  if (loadingTimer) clearInterval(loadingTimer);
+  loadingTimer = null;
+}
+
+function clientValidateUrl(raw) {
+  if (!raw || !raw.trim()) return { ok: false, msg: 'Enter a URL.' };
+  raw = raw.trim();
+  if (raw.length > 2048) return { ok: false, msg: 'URL is too long.' };
+  if (/\s/.test(raw)) return { ok: false, msg: 'URL contains whitespace.' };
+
+  let withScheme = raw;
+  if (!/^https?:\/\//i.test(raw)) withScheme = 'https://' + raw;
+
+  try {
+    const u = new URL(withScheme);
+    if (!['http:', 'https:'].includes(u.protocol)) {
+      return { ok: false, msg: 'Only http:// and https:// URLs are accepted.' };
+    }
+    if (!u.hostname || !u.hostname.includes('.')) {
+      return { ok: false, msg: 'Enter a valid domain (e.g., example.com).' };
+    }
+    return { ok: true, url: withScheme };
+  } catch (e) {
+    return { ok: false, msg: 'Invalid URL format.' };
+  }
+}
+
+async function callAudit(url) {
+  const resp = await fetch('/api/audit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url }),
+  });
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data.error || 'Audit failed.');
+  return data;
+}
+
+async function callCapture(reportId, email) {
+  const resp = await fetch('/api/capture', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ report_id: reportId, email }),
+  });
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data.error || 'Capture failed.');
+  return data;
+}
+
+function renderResults(data) {
+  const scoreEl = document.getElementById('score-number');
+  scoreEl.textContent = data.score;
+  scoreEl.className = 'score-number ' + scoreColorClass((data.score / data.max_score) * 100);
+  document.getElementById('score-domain').textContent = data.domain;
+
+  const capEl = document.getElementById('score-cap-msg');
+  if (data.ssl_hard_cap_applied) {
+    capEl.innerHTML = `<div class="score-cap">⚠ Score capped at 40 due to HTTPS/SSL failure. Resolve SSL before addressing other checks — no search engine ranks HTTP sites in 2026.</div>`;
+  } else {
+    capEl.innerHTML = '';
+  }
+
+  const catsEl = document.getElementById('categories');
+  catsEl.innerHTML = Object.entries(data.categories).map(([key, cat]) => `
+    <div class="cat-row">
+      <div class="cat-label">${escapeHtml(cat.label)}</div>
+      <div class="cat-bar">
+        <div class="cat-bar-fill ${barColorClass(cat.pct)}" style="width: ${cat.pct}%"></div>
+      </div>
+      <div class="cat-score">${cat.score}/${cat.max}</div>
+    </div>
+  `).join('');
+
+  renderFixQueuePreview(data);
+  renderChecks(data.checks, false);
+}
+
+function renderFixQueuePreview(data) {
+  const container = document.getElementById('fix-queue-container');
+  const preview = data.fix_queue_preview || [];
+
+  if (preview.length === 0) {
+    container.innerHTML = `
+      <div class="fix-queue">
+        <div class="fix-queue-title">PRIORITY FIX QUEUE</div>
+        <p style="text-align: center; padding: 24px 0; color: var(--pass);">
+          All checks passed. No fixes needed.
+        </p>
+      </div>
+    `;
+    return;
+  }
+
+  const allRecoverable = data.checks
+    .filter(c => c.status !== 'pass')
+    .reduce((sum, c) => sum + (c.points_possible - c.points_earned), 0);
+
+  container.innerHTML = `
+    <div class="fix-queue">
+      <div class="fix-queue-title">PRIORITY FIX QUEUE — TOP ${preview.length} FAILURES</div>
+      ${preview.map(item => `
+        <div class="fix-queue-item">
+          <span class="name">${escapeHtml(item.name)}</span>
+          <span class="points">+${item.points_recoverable} pts</span>
         </div>
-    </section>
-
-    <!-- CHECKS -->
-    <section class="checks" id="checks">
-        <div class="container">
-            <div class="section-label">Analysis</div>
-            <h2 class="section-title">15+ checks across three categories</h2>
-            <div class="checks-grid">
-                <div class="check-group">
-                    <h3><span class="icon">&#x1F310;</span> On-Site SVO</h3>
-                    <div class="check-item"><span class="dot"></span>Page Title (length + presence)</div>
-                    <div class="check-item"><span class="dot"></span>Meta Description</div>
-                    <div class="check-item"><span class="dot"></span>H1 / H2 Heading Structure</div>
-                    <div class="check-item"><span class="dot"></span>HTTPS / SSL Certificate</div>
-                    <div class="check-item"><span class="dot"></span>Mobile Viewport</div>
-                    <div class="check-item"><span class="dot"></span>Canonical URL</div>
-                    <div class="check-item"><span class="dot"></span>Open Graph Tags</div>
-                    <div class="check-item"><span class="dot"></span>Image Alt Text</div>
-                    <div class="check-item"><span class="dot"></span>Structured Data (JSON-LD)</div>
-                    <div class="check-item"><span class="dot"></span>Server Response Time</div>
-                    <div class="check-item"><span class="dot"></span>HTML Language Attribute</div>
-                </div>
-                <div class="check-group">
-                    <h3><span class="icon">&#x1F916;</span> AI Readiness</h3>
-                    <div class="check-item"><span class="dot"></span>robots.txt Accessibility</div>
-                    <div class="check-item"><span class="dot"></span>AI Crawler Blocking</div>
-                    <div class="check-item"><span class="dot"></span>Sitemap Declaration</div>
-                    <div class="check-item"><span class="dot"></span>IndexNow Protocol</div>
-                </div>
-                <div class="check-group">
-                    <h3><span class="icon">&#x1F4E1;</span> Off-Site Readiness</h3>
-                    <div class="check-item"><span class="dot"></span>Map Listing Readiness</div>
-                    <div class="check-item"><span class="dot"></span>Social Sharing Readiness</div>
-                    <div class="check-item"><span class="dot"></span>External Link Signals</div>
-                </div>
-            </div>
+      `).join('')}
+      <div class="fix-queue-unlock">
+        <div class="fix-queue-unlock-text">
+          <strong>+${allRecoverable} points</strong> available across all failed checks.<br>
+          Get exact fix instructions and verification steps.
         </div>
-    </section>
+        <button class="primary" id="unlock-btn"><span class="lock-icon">🔒</span>UNLOCK FIX DIRECTIVES</button>
+      </div>
+    </div>
+  `;
 
-    <!-- HOW IT WORKS -->
-    <section class="how-it-works" id="how">
-        <div class="container">
-            <div class="section-label">Setup</div>
-            <h2 class="section-title">Up and running in 60 seconds</h2>
-            <div class="steps">
-                <div class="step">
-                    <div class="step-num">1</div>
-                    <h3>Request Access</h3>
-                    <p>Reach out to get the tool. Once you have it, just unzip &#8212; only Python 3.8+ is needed. Dependencies install automatically.</p>
-                </div>
-                <div class="step">
-                    <div class="step-num">2</div>
-                    <h3>Run</h3>
-                    <p>Double-click the run script or type <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px;font-size:12px">python seo_audit.py serve</code> in your terminal.</p>
-                </div>
-                <div class="step">
-                    <div class="step-num">3</div>
-                    <h3>Audit</h3>
-                    <p>Enter any URL in the web interface. In about 10 seconds you get a scored report with downloadable Summary and Detail HTML files.</p>
-                </div>
-            </div>
+  document.getElementById('unlock-btn').addEventListener('click', openEmailModal);
+}
+
+function renderChecks(checks, withFixes) {
+  const listEl = document.getElementById('checks-list');
+  listEl.innerHTML = checks.map(c => renderCheck(c, withFixes)).join('');
+}
+
+function renderCheck(check, withFixes) {
+  const ptsClass = check.status === 'pass' ? 'points-good' : 'points-bad';
+
+  let fixHtml = '';
+  if (withFixes && check.status !== 'pass' && check.fix) {
+    fixHtml = `
+      <div class="check-fix">
+        <div class="fix-section">
+          <div class="fix-label">▸ FIX</div>
+          <div class="fix-content">${escapeHtml(check.fix)}</div>
         </div>
-    </section>
-
-    <!-- CTA -->
-    <section class="cta-section" id="get-started">
-        <div class="container">
-            <div class="cta-box">
-                <h2>Ready to audit your site?</h2>
-                <p>No API keys. No billing. No limits. Just SVEO analysis that works.</p>
-                <a href="https://github.com/Bravo19er" class="btn btn-primary" style="font-size:16px;padding:18px 40px;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-                    Contact on GitHub
-                </a>
-            </div>
+        ${check.verify ? `
+        <div class="fix-section">
+          <div class="fix-label">▸ VERIFY</div>
+          <div class="verify-content">${escapeHtml(check.verify)}</div>
         </div>
-    </section>
+        ` : ''}
+      </div>
+    `;
+  }
 
-    <!-- FOOTER -->
-    <footer>
-        <div class="container">
-            <p>SEO Auditor &#8212; Built by <a href="https://github.com/Bravo19er">Bravo19er</a></p>
-        </div>
-    </footer>
+  return `
+    <div class="check check-${check.status}">
+      <div class="check-header">
+        <span class="check-name">${escapeHtml(check.name)}</span>
+        <span class="check-badge badge-${check.status}">${check.status.toUpperCase()}</span>
+      </div>
+      <div class="check-detail">${escapeHtml(check.detail)}</div>
+      <div class="check-meta">
+        <span>${escapeHtml(check.category)}</span>
+        <span>${escapeHtml(check.weight)}</span>
+        <span class="${ptsClass}">${check.points_earned}/${check.points_possible} pts</span>
+      </div>
+      ${fixHtml}
+    </div>
+  `;
+}
 
-    <!-- SMOOTH SCROLL -->
-    <script>
-        document.querySelectorAll('a[href^="#"]').forEach(a => {
-            a.addEventListener('click', e => {
-                e.preventDefault();
-                const target = document.querySelector(a.getAttribute('href'));
-                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            });
-        });
+function openEmailModal() {
+  if (!State.data) return;
+  const allRecoverable = State.data.checks
+    .filter(c => c.status !== 'pass')
+    .reduce((sum, c) => sum + (c.points_possible - c.points_earned), 0);
+  document.getElementById('modal-points').textContent = `UNLOCK +${allRecoverable} RECOVERABLE POINTS`;
+  document.getElementById('modal-backdrop').classList.remove('hidden');
+  setTimeout(() => document.getElementById('email-input').focus(), 100);
+}
 
-        // Intersection Observer for fade-in
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
-                }
-            });
-        }, { threshold: 0.1 });
+function closeEmailModal() {
+  document.getElementById('modal-backdrop').classList.add('hidden');
+  clearError('error-email');
+  document.getElementById('email-form').reset();
+}
 
-        document.querySelectorAll('.feature-card, .check-group, .step').forEach(el => {
-            el.style.opacity = '0';
-            el.style.transform = 'translateY(20px)';
-            el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-            observer.observe(el);
-        });
-    </script>
+async function handleEmailSubmit(e) {
+  e.preventDefault();
+  clearError('error-email');
+
+  const email = document.getElementById('email-input').value.trim();
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  const originalText = submitBtn.textContent;
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'UNLOCKING...';
+
+  try {
+    const data = await callCapture(State.reportId, email);
+    State.fullChecks = data.checks;
+    State.unlocked = true;
+
+    renderChecks(State.fullChecks, true);
+
+    document.getElementById('fix-queue-container').innerHTML = `
+      <div class="fix-queue">
+        <div class="fix-queue-title">✓ FIXES UNLOCKED</div>
+        <p style="font-size: 13px; color: var(--fg-dim); padding: 8px 0;">
+          Every failed check below now shows the exact fix and verification step.
+          Download the PDF for the full report including code snippets and links.
+        </p>
+      </div>
+    `;
+
+    document.getElementById('post-unlock-actions').style.display = 'flex';
+
+    closeEmailModal();
+  } catch (err) {
+    showError('error-email', err.message || 'Could not unlock. Please try again.');
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalText;
+  }
+}
+
+function exportPDF() {
+  if (!window.jspdf) {
+    alert('PDF library not loaded. Refresh the page and try again.');
+    return;
+  }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+
+  const data = State.data;
+  const checks = State.fullChecks || data.checks;
+
+  const PAGE_W = doc.internal.pageSize.getWidth();
+  const PAGE_H = doc.internal.pageSize.getHeight();
+  const MARGIN = 50;
+  const CONTENT_W = PAGE_W - MARGIN * 2;
+  let y = MARGIN;
+
+  function newPage() {
+    doc.addPage();
+    y = MARGIN;
+  }
+
+  function checkPageBreak(needed) {
+    if (y + needed > PAGE_H - MARGIN) newPage();
+  }
+
+  function writeText(text, opts = {}) {
+    const fontSize = opts.size || 10;
+    const isBold = opts.bold || false;
+    const color = opts.color || [0, 0, 0];
+    const maxW = opts.maxWidth || CONTENT_W;
+    const indent = opts.indent || 0;
+
+    doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+    doc.setFontSize(fontSize);
+    doc.setTextColor(...color);
+
+    const lines = doc.splitTextToSize(String(text), maxW - indent);
+    const lineHeight = fontSize * 1.4;
+
+    lines.forEach(line => {
+      checkPageBreak(lineHeight);
+      doc.text(line, MARGIN + indent, y);
+      y += lineHeight;
+    });
+  }
+
+  function writeSpacer(h) { y += h; }
+
+  function writeRule() {
+    checkPageBreak(20);
+    doc.setDrawColor(200, 200, 200);
+    doc.line(MARGIN, y, PAGE_W - MARGIN, y);
+    y += 12;
+  }
+
+  doc.setFillColor(10, 10, 10);
+  doc.rect(0, 0, PAGE_W, 80, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(20);
+  doc.text('SVO AUDIT REPORT', MARGIN, 40);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(180, 180, 180);
+  doc.text(`Generated ${new Date(data.timestamp).toLocaleString()}`, MARGIN, 60);
+
+  y = 110;
+
+  doc.setTextColor(0, 0, 0);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(36);
+  doc.text(String(data.score), MARGIN, y + 20);
+
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(80, 80, 80);
+  doc.text(`/ ${data.max_score}`, MARGIN + 50, y + 20);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(0, 0, 0);
+  doc.text(data.domain, MARGIN + 120, y + 8);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(100, 100, 100);
+  doc.text('SVO Score', MARGIN + 120, y + 24);
+
+  y += 50;
+
+  if (data.ssl_hard_cap_applied) {
+    doc.setFillColor(255, 240, 240);
+    doc.rect(MARGIN, y, CONTENT_W, 32, 'F');
+    doc.setTextColor(200, 50, 50);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text('SCORE CAPPED AT 40 — HTTPS/SSL FAILURE', MARGIN + 12, y + 14);
+    doc.setFont('helvetica', 'normal');
+    doc.text('No search engine ranks HTTP sites in 2026. Resolve SSL first.', MARGIN + 12, y + 26);
+    y += 44;
+  }
+
+  writeSpacer(8);
+  writeRule();
+
+  writeText('CATEGORY BREAKDOWN', { size: 11, bold: true });
+  writeSpacer(6);
+
+  Object.values(data.categories).forEach(cat => {
+    checkPageBreak(20);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    doc.text(cat.label, MARGIN, y);
+    doc.text(`${cat.score} / ${cat.max}`, PAGE_W - MARGIN, y, { align: 'right' });
+    y += 6;
+
+    doc.setFillColor(230, 230, 230);
+    doc.rect(MARGIN, y, CONTENT_W, 4, 'F');
+    const fillW = (cat.pct / 100) * CONTENT_W;
+    const barColor = cat.pct >= 80 ? [74, 222, 128] : cat.pct >= 50 ? [251, 191, 36] : [248, 113, 113];
+    doc.setFillColor(...barColor);
+    doc.rect(MARGIN, y, fillW, 4, 'F');
+    y += 16;
+  });
+
+  writeSpacer(8);
+  writeRule();
+
+  const problems = checks.filter(c => c.status !== 'pass');
+  if (problems.length > 0) {
+    writeText('PRIORITY FIX QUEUE', { size: 11, bold: true });
+    writeSpacer(8);
+
+    const sorted = [...problems].sort((a, b) =>
+      (b.points_possible - b.points_earned) - (a.points_possible - a.points_earned)
+    );
+
+    sorted.forEach((c, idx) => {
+      const recoverable = c.points_possible - c.points_earned;
+      checkPageBreak(80);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(0, 0, 0);
+      const statusColor = c.status === 'fail' ? [200, 50, 50] : [180, 130, 30];
+      doc.setTextColor(...statusColor);
+      doc.text(`[${c.status.toUpperCase()}]`, MARGIN, y);
+      doc.setTextColor(0, 0, 0);
+      doc.text(c.name, MARGIN + 50, y);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(80, 80, 80);
+      doc.text(`+${recoverable} pts`, PAGE_W - MARGIN, y, { align: 'right' });
+      y += 16;
+
+      writeText('Finding:', { size: 9, bold: true, color: [80, 80, 80] });
+      writeText(c.detail, { size: 9, color: [50, 50, 50] });
+      writeSpacer(6);
+
+      if (c.fix) {
+        writeText('Fix:', { size: 9, bold: true, color: [80, 80, 80] });
+        writeText(c.fix, { size: 9, color: [0, 0, 0] });
+        writeSpacer(6);
+      }
+
+      if (c.verify) {
+        writeText('Verify:', { size: 9, bold: true, color: [80, 80, 80] });
+        writeText(c.verify, { size: 9, color: [50, 50, 50] });
+      }
+
+      writeSpacer(14);
+      if (idx < sorted.length - 1) {
+        checkPageBreak(20);
+        doc.setDrawColor(220, 220, 220);
+        doc.line(MARGIN, y, PAGE_W - MARGIN, y);
+        y += 14;
+      }
+    });
+  }
+
+  const passed = checks.filter(c => c.status === 'pass');
+  if (passed.length > 0) {
+    checkPageBreak(40);
+    writeSpacer(8);
+    writeRule();
+    writeText(`PASSED CHECKS (${passed.length})`, { size: 11, bold: true });
+    writeSpacer(6);
+
+    passed.forEach(c => {
+      checkPageBreak(14);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(74, 150, 80);
+      doc.text('✓', MARGIN, y);
+      doc.setTextColor(0, 0, 0);
+      doc.text(c.name, MARGIN + 14, y);
+      doc.setTextColor(120, 120, 120);
+      doc.text(`${c.points_earned}/${c.points_possible}`, PAGE_W - MARGIN, y, { align: 'right' });
+      y += 13;
+    });
+  }
+
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text(`SVO Audit — ${data.domain}`, MARGIN, PAGE_H - 24);
+    doc.text(`Page ${i} of ${pageCount}`, PAGE_W - MARGIN, PAGE_H - 24, { align: 'right' });
+  }
+
+  const safeDomain = data.domain.replace(/[^a-z0-9]/gi, '_');
+  const dateStr = new Date().toISOString().split('T')[0];
+  doc.save(`svo-report_${safeDomain}_${dateStr}.pdf`);
+}
+
+document.getElementById('audit-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  clearError('error-initial');
+
+  const raw = document.getElementById('url-input').value;
+  const validation = clientValidateUrl(raw);
+  if (!validation.ok) {
+    showError('error-initial', validation.msg);
+    return;
+  }
+
+  setState('loading');
+  startLoadingMessages();
+
+  try {
+    const data = await callAudit(validation.url);
+    stopLoadingMessages();
+    State.data = data;
+    State.reportId = data.report_id;
+    renderResults(data);
+    setState('results');
+  } catch (err) {
+    stopLoadingMessages();
+    setState('initial');
+    showError('error-initial', err.message || 'Audit failed. Please try again.');
+  }
+});
+
+document.getElementById('email-form').addEventListener('submit', handleEmailSubmit);
+document.getElementById('modal-close').addEventListener('click', closeEmailModal);
+document.getElementById('modal-backdrop').addEventListener('click', (e) => {
+  if (e.target.id === 'modal-backdrop') closeEmailModal();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !document.getElementById('modal-backdrop').classList.contains('hidden')) {
+    closeEmailModal();
+  }
+});
+
+document.getElementById('export-pdf-btn').addEventListener('click', exportPDF);
+document.getElementById('new-audit-btn').addEventListener('click', () => {
+  State.data = null;
+  State.reportId = null;
+  State.unlocked = false;
+  State.fullChecks = null;
+  document.getElementById('url-input').value = '';
+  document.getElementById('post-unlock-actions').style.display = 'none';
+  setState('initial');
+});
+</script>
 </body>
 </html>
