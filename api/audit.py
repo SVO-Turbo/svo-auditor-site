@@ -189,4 +189,56 @@ async def _run_audit(url, client_ip):
     # 8. Return Tier 1 response (no fix/verify)
     return {
         "report_id": report_id,
-        "timestamp": tim
+        "timestamp": timestamp,
+        "url": validated.url,
+        "domain": validated.hostname,
+        "score": score,
+        "max_score": max_score,
+        "ssl_hard_cap_applied": ssl_cap,
+        "categories": categories,
+        "checks": [_serialize_tier1(c) for c in all_checks],
+        "fix_queue_preview": _build_fix_queue_preview(all_checks),
+    }
+
+
+class handler(BaseHTTPRequestHandler):
+    def _send_json(self, status, body):
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        self.wfile.write(json.dumps(body).encode())
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.end_headers()
+
+    def do_POST(self):
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            if length > 2048:
+                return self._send_json(413, {"error": "Request too large."})
+
+            raw = self.rfile.read(length).decode("utf-8")
+            try:
+                payload = json.loads(raw)
+            except json.JSONDecodeError:
+                return self._send_json(400, {"error": "Invalid JSON."})
+
+            url = (payload.get("url") or "").strip()
+            if not url:
+                return self._send_json(400, {"error": "A url is required."})
+
+            client_ip = _get_client_ip(self.headers)
+            result = asyncio.run(_run_audit(url, client_ip))
+            self._send_json(200, result)
+
+        except ValidationError as e:
+            self._send_json(400, {"error": str(e)})
+        except RateLimitExceeded as e:
+            self._send_json(429, {"error": str(e)})
+        except Exception as e:
+            self._send_json(500, {"error": f"Audit failed: {type(e).__name__}"})
