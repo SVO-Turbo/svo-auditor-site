@@ -108,4 +108,12 @@ async def check_rate_limit(ip_hash):
     if expire_commands:
         await _kv_pipeline(expire_commands)
 
-    if hour_count > HOURLY_LIMIT
+    if hour_count > HOURLY_LIMIT:
+        raise RateLimitExceeded(
+            f"Rate limit reached: {HOURLY_LIMIT} audits per hour. Please try again later."
+        )
+
+    if day_count > DAILY_LIMIT:
+        raise RateLimitExceeded(
+            f"Rate limit reached: {DAILY_LIMIT} audits per day. Please try again tomorrow."
+        )

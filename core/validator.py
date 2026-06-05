@@ -6,6 +6,7 @@ network request is made. Failure raises ValidationError.
 """
 import ipaddress
 import socket
+import re
 from dataclasses import dataclass
 from urllib.parse import urlparse, urlunparse
 
@@ -117,4 +118,108 @@ def _validate_hostname_format(hostname):
 
     for suffix in BLOCKED_SUFFIXES:
         if hostname.endswith(suffix):
-            raise ValidationError(f"Hostnames ending in '{suff
+            raise ValidationError(f"Hostnames ending in '{suffix}' are not allowed.")
+
+
+# Schemes we explicitly reject even when written without "://"
+_DANGEROUS_SCHEMES = {"javascript", "data", "vbscript", "file", "ftp", "mailto", "tel", "blob"}
+
+
+def validate_url(raw_url):
+    """
+    Validate and canonicalize a user-submitted URL.
+
+    Returns a ValidatedURL on success. Raises ValidationError on any failure
+    (bad scheme, malformed/blocked hostname, IP literal, DNS failure, or a
+    hostname that resolves to a private/loopback/link-local address).
+    """
+    if not raw_url or not isinstance(raw_url, str):
+        raise ValidationError("A URL is required.")
+
+    candidate = raw_url.strip()
+    if not candidate:
+        raise ValidationError("A URL is required.")
+    if len(candidate) > MAX_URL_LENGTH:
+        raise ValidationError(f"URL exceeds {MAX_URL_LENGTH} characters.")
+
+    # Resolve the scheme safely.
+    m = re.match(r"^([a-zA-Z][a-zA-Z0-9+.\-]*):", candidate)
+    if m:
+        pre_scheme = m.group(1).lower()
+        if "://" in candidate:
+            # Absolute URL like https://host — scheme must be allowed.
+            if pre_scheme not in ALLOWED_SCHEMES:
+                raise ValidationError(
+                    f"URL scheme '{pre_scheme}' is not allowed. Use http or https."
+                )
+        else:
+            # "scheme:" with no // — reject dangerous schemes (javascript:, data:, …).
+            # Otherwise treat it as a schemeless host[:port] the user typed.
+            if pre_scheme in _DANGEROUS_SCHEMES:
+                raise ValidationError(
+                    f"URL scheme '{pre_scheme}' is not allowed. Use http or https."
+                )
+            candidate = "https://" + candidate
+    else:
+        candidate = "https://" + candidate
+
+    # Strip embedded credentials (user:pass@) before parsing.
+    candidate = _strip_credentials(candidate)
+
+    parsed = urlparse(candidate)
+
+    scheme = (parsed.scheme or "").lower()
+    if scheme not in ALLOWED_SCHEMES:
+        raise ValidationError(
+            f"URL scheme '{scheme or '(none)'}' is not allowed. Use http or https."
+        )
+
+    hostname = (parsed.hostname or "").lower()
+    if not hostname:
+        raise ValidationError("URL has no hostname.")
+
+    # Reject bare IP-literal hosts (v4 or v6) — require real domain names.
+    is_ip_literal = True
+    try:
+        ipaddress.ip_address(hostname)
+    except ValueError:
+        is_ip_literal = False
+    if is_ip_literal:
+        raise ValidationError("Provide a domain name, not an IP address.")
+
+    _validate_hostname_format(hostname)
+
+    # Guard against a non-numeric port (urlparse raises on access).
+    try:
+        parsed_port = parsed.port
+    except ValueError:
+        raise ValidationError("URL contains an invalid port.")
+
+    # Resolve DNS, then apply the private-IP / SSRF filter to the result.
+    try:
+        resolved_ip = socket.gethostbyname(hostname)
+    except (socket.gaierror, socket.herror, UnicodeError, OSError):
+        raise ValidationError(f"Could not resolve hostname '{hostname}'.")
+
+    if _is_private_ip(resolved_ip):
+        raise ValidationError("URL resolves to a private or disallowed IP address.")
+
+    port = parsed_port or DEFAULT_PORTS[scheme]
+    path = parsed.path or "/"
+
+    if parsed_port and parsed_port not in (80, 443):
+        netloc = f"{hostname}:{parsed_port}"
+    else:
+        netloc = hostname
+
+    # Canonical URL: drop params, query, and fragment.
+    canonical = urlunparse((scheme, netloc, path, "", "", ""))
+
+    return ValidatedURL(
+        url=canonical,
+        scheme=scheme,
+        hostname=hostname,
+        port=port,
+        path=path,
+        resolved_ip=resolved_ip,
+    )
