@@ -1,43 +1,24 @@
-# SVO Turbo: Search Visibility Optimization
+# SVO-Turbo Search Visibility Auditor
 
-## 1. Project Overview
-This repository contains the public-facing marketing and auditing interface for the SVO Turbo framework. Operating as the primary entry point for client acquisition and initial visibility assessment, this application connects directly to the broader Digital Authority Platform (DAP) architecture.
+Audit any public URL against 32 search-visibility checks and get a 0–100 score with exact fixes. Live at [svo-auditor-site.vercel.app](https://svo-auditor-site.vercel.app).
 
-The site is engineered for maximum performance, utilizing edge-network deployment to ensure zero-latency interactions and strict adherence to technical SEO best practices.
+Enter a URL, get a score and a full pass/fail breakdown for free. Submit an email to unlock the fix directive for every failed check and download a PDF report.
 
----
+## What it checks
 
-## 2. Technical Stack
-* Framework: Next.js (App Router)
-* Hosting and Delivery: Vercel (Global Edge Network)
-* Styling: Tailwind CSS
-* Analytics: Privacy-first, cookie-less telemetry
+32 weighted checks across four layers, scored out of 100:
 
----
+- **Technical Foundation** (28 pts) — HTTPS/SSL, load speed (TTFB, LCP, CLS), mobile viewport, redirect chains, mixed content
+- **On-Page SEO** (30 pts) — title, meta description, heading structure, canonical URL, image alt text, word count, internal links
+- **Structured Data** (22 pts) — JSON-LD coverage including LocalBusiness, Service, FAQPage, BreadcrumbList, and review markup
+- **AI Readiness** (20 pts) — AI crawler access (GPTBot, ClaudeBot, PerplexityBot, Google-Extended), llms.txt, IndexNow, sitemap, semantic HTML
 
-## 3. Operational Features
+A failed HTTPS/SSL check caps the total at 40 — an insecure origin cannot score higher regardless of the rest.
 
-### 3.1 The Visibility Auditor
-A diagnostic engine that assesses baseline Search Visibility Optimization (SVO) metrics. It bypasses superficial metrics to evaluate core data pipeline integrity across the primary search engines (Google, Bing, Apple).
+## How it works
 
-### 3.2 Lead Orchestration
-Capture forms and audit requests are decoupled from the frontend, routing payloads directly to the internal AWS infrastructure for processing and CRM ingestion. 
+The audit runs server-side: the URL is validated and rate-limited, the page is fetched and parsed once, all 32 checks run, and a report is produced. The free result shows your score, the four category scores, every check’s status, and a preview of the top fixes. Entering an email reveals the full fix-and-verify directives and enables PDF export.
 
----
+## Built with
 
-## 4. Local Development Protocol
-
-To establish the local environment for UI adjustments or component testing:
-
-```bash
-# 1. Clone the repository
-git clone [https://github.com/SVO-Turbo/seo-auditor-site.git](https://github.com/SVO-Turbo/seo-auditor-site.git)
-
-# 2. Navigate to the project directory
-cd seo-auditor-site
-
-# 3. Install dependencies
-npm install
-
-# 4. Initialize the local development server
-npm run dev
+A single static HTML/JS front end, Python serverless functions on Vercel, Supabase for stored results, Upstash Redis for rate limiting, and a private GitHub repository as the report archive. No build step and no Node toolchain.
