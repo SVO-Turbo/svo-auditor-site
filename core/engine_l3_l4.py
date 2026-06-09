@@ -306,7 +306,7 @@ def _check_llms_txt(text_or_status):
     if status != 200 or not text:
         return CheckResult(
             id="llms_txt", name="llms.txt Present + Valid", category="ai-readiness", weight="critical",
-            points_earned=0, points_possible=7, status="fail",
+            points_earned=0, points_possible=5, status="fail",
             detail="No llms.txt found at the domain root. AI agents cannot discover a curated content map.",
             fix="Create /llms.txt at your domain root following the spec at llmstxt.org. Minimum structure:\n\n# Your Site Name\n\n> Brief description of what your site is about.\n\n## Docs\n- [Page Title](https://yourdomain.com/page): Brief description\n\n## Optional\n- [Other Page](https://yourdomain.com/other): Description\n\nServe it as text/plain at https://yourdomain.com/llms.txt.",
             verify="curl https://yourdomain.com/llms.txt — should return 200 with markdown content starting with # heading.",
@@ -320,7 +320,7 @@ def _check_llms_txt(text_or_status):
     if has_h1 and has_blockquote and section_count >= 2:
         return CheckResult(
             id="llms_txt", name="llms.txt Present + Valid", category="ai-readiness", weight="critical",
-            points_earned=7, points_possible=7, status="pass",
+            points_earned=5, points_possible=5, status="pass",
             detail=f"Valid llms.txt found with H1, description, and {section_count} sections.",
         )
 
@@ -332,7 +332,7 @@ def _check_llms_txt(text_or_status):
 
     return CheckResult(
         id="llms_txt", name="llms.txt Present + Valid", category="ai-readiness", weight="critical",
-        points_earned=4, points_possible=7, status="warn",
+        points_earned=3, points_possible=5, status="warn",
         detail=f"llms.txt found but missing required elements: {', '.join(missing)}.",
         fix=f"Update /llms.txt to add: {', '.join(missing)}. Spec at llmstxt.org. Required: # H1 site title, > blockquote description, ## section headings with linked items.",
         verify="View https://yourdomain.com/llms.txt — confirm structure matches llmstxt.org spec.",

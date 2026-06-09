@@ -639,10 +639,9 @@ async def run_l1_l2_checks(validated):
         _check_redirect_chain(page),
         _check_mixed_content(html, validated),
 
-        # Layer 2 — On-Page (30 pts) — 8 checks shown in spec, but only 9 add up.
-        # Reconciled to 8 checks summing to 30: title(6) + meta_desc(5) + headings(4)
-        # + canonical(4) + alt_text(3) + internal_links(2) + word_count(2) + lang(1) = 27.
-        # We allocate +3 to alt_text to keep 8 checks. Adjusted below.
+        # Layer 2 — On-Page (30 pts) — 9 checks:
+        # title(6) + meta_desc(5) + headings(4) + canonical(4) + alt_text(3)
+        # + internal_links(2) + word_count(2) + lang(1) + open_graph(3) = 30
         _check_title(soup),
         _check_meta_description(soup),
         _check_headings(soup),
@@ -653,8 +652,6 @@ async def run_l1_l2_checks(validated):
         _check_lang_attr(soup),
     ]
 
-    # Add a placeholder check to make Layer 2 sum to 30 instead of 27.
-    # We bundle "open graph tags" as a 3-pt social-readiness check.
     checks.append(_check_open_graph(soup))
 
     return checks, html, soup
